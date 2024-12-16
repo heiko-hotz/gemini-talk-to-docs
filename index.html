@@ -1,0 +1,738 @@
+<html>
+  <head>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+      :root {
+        --primary: #6750A4;
+        --on-primary: #FFFFFF;
+        --surface: #FFFBFE;
+        --surface-variant: #E7E0EC;
+        --outline: #79747E;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Inter', sans-serif;
+      }
+
+      body {
+        background: var(--surface);
+        color: #1C1B1F;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      .header {
+        background: var(--primary);
+        color: var(--on-primary);
+        padding: 1rem 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .connection-status {
+        display: flex;
+        align-items: center;
+        font-size: 16px;
+        gap: 12px;
+        padding: 12px 16px;
+        background: var(--surface-variant);
+        border-radius: 12px;
+        margin-bottom: 16px;
+      }
+
+      .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #ff4444;
+        transition: background-color 0.3s;
+      }
+
+      .status-indicator.connected {
+        background-color: #00C853;
+      }
+
+      #connectionStatus {
+        font-weight: 500;
+      }
+
+      .card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        margin: 16px 0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      }
+
+      .input-group {
+        margin: 16px 0;
+      }
+
+      .input-field {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid var(--outline);
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.2s;
+      }
+
+      .input-field:focus {
+        border-color: var(--primary);
+        outline: none;
+      }
+
+      .button {
+        background: var(--primary);
+        color: var(--on-primary);
+        border: none;
+        border-radius: 20px;
+        padding: 10px 24px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .button:hover {
+        background: #7C6ABF;
+      }
+
+      .button-icon {
+        background: var(--surface-variant);
+        color: var(--primary);
+        border: none;
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .button-icon:hover {
+        background: #DBD3E0;
+      }
+
+      .button-icon.active {
+        background: var(--primary);
+        color: var(--on-primary);
+      }
+
+      .button-icon.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin: 16px 0;
+      }
+
+      .mic-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 12px;
+        font-size: 14px;
+        color: var(--outline);
+      }
+
+      .mic-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #ccc;
+        transition: background-color 0.3s;
+      }
+
+      .mic-indicator.recording {
+        background-color: #f44336;
+        animation: pulse 1.5s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.2);
+          opacity: 0.8;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      .file-upload {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 16px 0;
+      }
+
+      .error-message {
+        background-color: #ffebee;
+        color: #c62828;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin: 16px 0;
+        display: none;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .error-message.visible {
+        display: flex;
+      }
+
+      #videoElement {
+        width: 320px;
+        height: 240px;
+        border-radius: 20px;
+        margin: 16px 0;
+      }
+
+      #canvasElement {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <h1>Gemini 2.0 Demo</h1>
+    </header>
+
+    <div class="container">
+      <div class="connection-status">
+        <div class="status-indicator" id="connectionIndicator"></div>
+        <span id="connectionStatus">Disconnected</span>
+      </div>
+      <div class="error-message" id="errorMessage">
+        <i class="material-icons">error</i>
+        <span id="errorText"></span>
+      </div>
+      <div class="card">
+        <h3>Connect to Model</h3>
+        <div class="input-group">
+          <input class="input-field" type="text" id="token" placeholder="Access Token..." />
+        </div>
+        <div class="input-group">
+          <input 
+            class="input-field" 
+            type="text" 
+            id="model" 
+            value="projects/{PROJECT_ID}/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp" 
+            placeholder="Enter your full model ID (projects/{PROJECT_ID}/locations/...)" />
+        </div>
+        <button onclick="connect()" class="button">Connect</button>
+      </div>
+
+      <div class="card">
+        <h3>Video Feed</h3>
+        <video id="videoElement" autoplay></video>
+        <canvas id="canvasElement"></canvas>
+      </div>
+
+      <div class="card">
+        <h3>Upload PDF Document</h3>
+        <div class="file-upload">
+          <input type="file" id="pdfFile" accept=".pdf" class="input-field"/>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Voice Controls</h3>
+        <div class="controls">
+          <button id="micButton" onclick="startAudioInput()" class="button-icon" title="Start Recording">
+            <i class="material-icons">mic</i>
+          </button>
+          <button id="stopButton" onclick="stopAudioInput()" class="button-icon" title="Stop Recording">
+            <i class="material-icons">stop</i>
+          </button>
+          <div class="mic-status">
+            <div class="mic-indicator" id="micIndicator"></div>
+            <span id="micStatus">Microphone off</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let webSocket = null;
+      let accessTokenInput = null;
+      let modelIdInput = null;
+      let pdfText = "";
+      let isRecording = false;
+      let currentFrameB64 = null;
+      const video = document.getElementById("videoElement");
+      const canvas = document.getElementById("canvasElement");
+      const context = canvas.getContext("2d");
+      let stream = null;
+
+      // Function to start the webcam
+      async function startWebcam() {
+        try {
+          const constraints = {
+            video: {
+              width: { max: 640 },
+              height: { max: 480 },
+            },
+          };
+
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+          video.srcObject = stream;
+        } catch (err) {
+          console.error("Error accessing the webcam: ", err);
+        }
+      }
+
+      // Function to capture an image and convert it to base64
+      function captureImage() {
+        if (stream) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = canvas.toDataURL("image/jpeg").split(",")[1].trim();
+          currentFrameB64 = imageData;
+        }
+      }
+
+      window.addEventListener("load", startWebcam);
+      setInterval(captureImage, 1000);
+
+      document.getElementById('pdfFile').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (file.type !== 'application/pdf') {
+          console.error('Please upload a PDF file.');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+          const typedarray = new Uint8Array(e.target.result);
+          const pdf = await pdfjsLib.getDocument(typedarray).promise;
+          
+          let fullText = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            fullText += pageText + '\n';
+          }
+          
+          pdfText = fullText;
+          console.log('PDF text extracted:', pdfText);
+
+          const payload = {
+            client_content: {
+              turns: [
+                {
+                  role: "system",
+                  parts: [{ text: "You are a financial analyst that helps analyse financial statements. Do not make things up - if you don't know the answer, just say \"I don't know\". When acknowledging receipt of a PDF document, respond exactly with: \"I see that you uploaded a document. I read it and am ready to chat about it.\"" }],
+                },
+                {
+                  role: "user",
+                  parts: [{ text: `I have uploaded a PDF document. \n${pdfText}` }],
+                },
+              ],
+              turn_complete: true,
+            },
+          };
+
+          webSocket.send(JSON.stringify(payload));
+          console.log("sent initial PDF content to model");
+        };
+        reader.readAsArrayBuffer(file);
+      });
+
+      function connect() {
+        accessTokenInput = document.getElementById("token");
+        modelIdInput = document.getElementById("model");
+
+        if (!accessTokenInput.value) {
+          alert("Please enter an access token");
+          return;
+        }
+
+        if (!modelIdInput.value) {
+          alert("Please enter a model ID");
+          return;
+        }
+
+        webSocket = new WebSocket("ws://localhost:8080");
+        
+        webSocket.onopen = function () {
+          console.log("connected");
+          document.getElementById('connectionIndicator').classList.add('connected');
+          document.getElementById('connectionStatus').textContent = 'Connected';
+          hideError();
+          sendInitialSetupMessage();
+        };
+
+        webSocket.onclose = function (event) {
+          console.log("disconnected", event);
+          document.getElementById('connectionIndicator').classList.remove('connected');
+          document.getElementById('connectionStatus').textContent = 'Disconnected';
+          stopAudioInput();
+          
+          if (event.code === 1011) {
+            const reason = event.reason || "Resource limit exceeded. Please try again later.";
+            showError(reason);
+          } else if (event.code === 1008) {
+            const reason = event.reason || "Authentication failed. Please check your token.";
+            showError(reason);
+          } else if (!event.wasClean) {
+            showError("Connection closed unexpectedly. Please try again.");
+          }
+        };
+
+        webSocket.onerror = function(error) {
+          console.error("WebSocket error:", error);
+          showError("Connection error. Please check your token and try again.");
+        };
+
+        webSocket.onmessage = function(event) {
+          try {
+            const data = JSON.parse(event.data);
+            console.log("Received message:", data);
+            
+            if (data.type === "error") {
+              console.error("Server error:", data);
+              showError(data.error || "An error occurred");
+              return;
+            }
+            
+            // Handle normal message
+            if (data.text) {
+              current_message = "";
+              addParagraphToDiv("messages", data.text);
+            } else if (data.audio) {
+              injestAudioChuckToPlay(data.audio);
+            } else {
+              receiveMessage(event);
+            }
+          } catch (error) {
+            console.error("Error processing message:", error);
+            showError("Error processing server response");
+          }
+        };
+      }
+
+      function sendInitialSetupMessage() {
+        console.log("sending auth message");
+
+        const accessToken = accessTokenInput.value;
+        const modelId = modelIdInput.value;
+
+        auth_message = {
+          bearer_token: accessToken,
+        };
+        webSocket.send(JSON.stringify(auth_message));
+
+        console.log("sending setup message");
+        setup_client_message = {
+          setup: {
+            model: modelId,
+            generation_config: { 
+              response_modalities: ["AUDIO"],
+              speech_config: {
+                voice_config: {
+                  prebuilt_voice_config: {
+                    voice_name: "Puck"
+                  }
+                }
+              }
+            },
+          },
+        };
+
+        webSocket.send(JSON.stringify(setup_client_message));
+      }
+
+      function sendVoiceMessage(b64PCM) {
+        if (webSocket == null) {
+          console.log("websocket not initialized");
+          return;
+        }
+
+        const textToBase64 = (text) => {
+          return btoa(unescape(encodeURIComponent(text)));
+        };
+
+        const voicePayload = {
+          realtime_input: {
+            media_chunks: [
+              {
+                mime_type: "audio/pcm",
+                data: b64PCM
+              },
+              {
+                mime_type: "image/jpeg",
+                data: currentFrameB64
+              },
+              {
+                mime_type: "text/plain",
+                data: pdfText ? textToBase64(`Context from PDF:\n${pdfText}`) : textToBase64("")
+              }
+            ],
+          },
+        };
+
+        webSocket.send(JSON.stringify(voicePayload));
+        console.log("sent voice message with context and video frame");
+      }
+
+      let current_message = "";
+
+      function receiveMessage(event) {
+        const messageData = JSON.parse(event.data);
+        console.log("messageData: ", messageData);
+        const response = new Response(messageData);
+        console.log("receiveMessage ", response);
+
+        current_message = current_message + response.data;
+
+        injestAudioChuckToPlay(response.data);
+
+        if (response.endOfTurn) {
+          current_message = "";
+        }
+      }
+
+      class Response {
+        constructor(data) {
+          this.data = "";
+          this.endOfTurn = data?.serverContent?.turnComplete;
+
+          if (data?.serverContent?.modelTurn?.parts) {
+            this.data = data?.serverContent?.modelTurn?.parts[0]?.text;
+          }
+
+          if (data?.serverContent?.modelTurn?.parts[0]?.inlineData) {
+            this.data =
+              data?.serverContent?.modelTurn?.parts[0]?.inlineData.data;
+          }
+        }
+      }
+
+      let audioContext;
+      let mediaRecorder;
+      let processor;
+      let pcmData = [];
+      let audioStream;
+      let processorInterval;
+
+      function recordChunk() {
+        if (pcmData.length === 0) return;
+        
+        // Convert to base64
+        const buffer = new ArrayBuffer(pcmData.length * 2);
+        const view = new DataView(buffer);
+        pcmData.forEach((value, index) => {
+          view.setInt16(index * 2, value, true);
+        });
+
+        const base64 = btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
+        sendVoiceMessage(base64);
+        pcmData = [];
+      }
+
+      async function startAudioInput() {
+        if (isRecording) return;
+        
+        try {
+          audioContext = new AudioContext({
+            sampleRate: 16000,
+          });
+
+          audioStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              channelCount: 1,
+              sampleRate: 16000,
+            },
+          });
+
+          const source = audioContext.createMediaStreamSource(audioStream);
+          processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+          processor.onaudioprocess = function(e) {
+            const inputData = e.inputBuffer.getChannelData(0);
+            // Convert float32 to int16 immediately
+            const pcm16 = new Int16Array(inputData.length);
+            for (let i = 0; i < inputData.length; i++) {
+              pcm16[i] = inputData[i] * 0x7fff;
+            }
+            pcmData.push(...pcm16);
+          };
+
+          source.connect(processor);
+          processor.connect(audioContext.destination);
+
+          processorInterval = setInterval(recordChunk, 1000);
+          isRecording = true;
+          updateMicStatus();
+        } catch (error) {
+          console.error('Error starting audio input:', error);
+          stopAudioInput();
+        }
+      }
+
+      async function stopAudioInput() {
+        try {
+          if (processorInterval) {
+            clearInterval(processorInterval);
+            processorInterval = null;
+          }
+
+          if (processor) {
+            processor.disconnect();
+            processor = null;
+          }
+
+          if (audioStream) {
+            audioStream.getTracks().forEach(track => track.stop());
+            audioStream = null;
+          }
+
+          if (audioContext) {
+            await audioContext.close();
+            audioContext = null;
+          }
+
+          pcmData = [];
+          isRecording = false;
+          updateMicStatus();
+        } catch (error) {
+          console.error('Error stopping audio input:', error);
+        }
+      }
+
+      let initialized = false;
+      let audioInputContext;
+      let audioQueue = [];
+      let isPlaying = false;
+
+      async function initializeAudioContext() {
+        if (initialized) return;
+
+        audioInputContext = new (window.AudioContext ||
+          window.webkitAudioContext)({ sampleRate: 24000 });
+        initialized = true;
+      }
+
+      async function injestAudioChuckToPlay(base64AudioChunk) {
+        if (!initialized) {
+          await initializeAudioContext();
+        }
+
+        const audioData = base64ToArrayBuffer(base64AudioChunk);
+        const pcmData = new Int16Array(audioData);
+        const floatData = convertPCM16LEToFloat32(pcmData);
+        
+        console.log('Audio chunk size:', floatData.length);
+        console.log('Current queue length:', audioQueue.length);
+        
+        const audioBuffer = audioInputContext.createBuffer(1, floatData.length, 24000);
+        const channelData = audioBuffer.getChannelData(0);
+        
+        for (let i = 0; i < floatData.length; i++) {
+          channelData[i] = i === 0 ? floatData[i] : 
+            (floatData[i] * 0.8 + floatData[i - 1] * 0.2);
+        }
+
+        audioQueue.push(audioBuffer);
+        
+        playNextInQueue();
+      }
+
+      async function playNextInQueue() {
+        if (!isPlaying && audioQueue.length > 0) {
+          isPlaying = true;
+          const audioData = audioQueue.shift();
+          
+          const source = audioInputContext.createBufferSource();
+          source.buffer = audioData;
+          source.connect(audioInputContext.destination);
+          
+          source.onended = () => {
+            isPlaying = false;
+            playNextInQueue();
+          };
+          
+          source.start();
+        }
+      }
+
+      function base64ToArrayBuffer(base64) {
+        var binaryString = window.atob(base64);
+        var len = binaryString.length;
+        var bytes = new Uint8Array(len);
+        for (var i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes.buffer;
+      }
+
+      function convertPCM16LEToFloat32(pcmData) {
+        const float32Samples = new Float32Array(pcmData.length);
+        for (let i = 0; i < pcmData.length; i++) {
+          float32Samples[i] = pcmData[i] / 32768.0;
+        }
+        return float32Samples;
+      }
+
+      function updateMicStatus() {
+        const indicator = document.getElementById('micIndicator');
+        const status = document.getElementById('micStatus');
+        const micButton = document.getElementById('micButton');
+        
+        if (isRecording) {
+          indicator.classList.add('recording');
+          status.textContent = 'Recording';
+          micButton.classList.add('active');
+        } else {
+          indicator.classList.remove('recording');
+          status.textContent = 'Microphone off';
+          micButton.classList.remove('active');
+        }
+      }
+
+      function showError(message) {
+        console.log("Showing error:", message);  
+        const errorDiv = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        errorText.textContent = message;
+        errorDiv.classList.add('visible');
+        
+        // Automatically hide error after 5 seconds
+        setTimeout(hideError, 5000);
+      }
+
+      function hideError() {
+        const errorDiv = document.getElementById('errorMessage');
+        errorDiv.classList.remove('visible');
+      }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+  </body>
+</html>
