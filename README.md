@@ -67,6 +67,29 @@ The application uses the following default settings:
 - Audio sample rate: 16kHz for input, 24kHz for output
 - Video feed maximum resolution: 640x480
 
+## Architecture: WebSocket Proxy
+
+This application implements a WebSocket proxy architecture between the client and Gemini's API for several key benefits:
+
+1. **Security**: 
+   - API keys and sensitive credentials remain secure on the server side
+   - Prevents direct exposure of the Gemini API endpoint to clients
+   - Enables proper token validation and rate limiting
+
+2. **Performance**:
+   - Maintains persistent connections for real-time streaming
+   - Reduces latency for voice and video interactions
+   - Enables efficient handling of large binary data (PDFs, video frames)
+
+3. **Production Benefits**:
+   - Easier deployment behind corporate firewalls
+   - Centralized logging and monitoring
+   - Ability to implement caching and request optimization
+   - Simplified scaling and load balancing
+   - Better control over API usage and costs
+
+The proxy server (`main.py`) handles all communication between the web client and Gemini's API, making the application more secure and production-ready.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
